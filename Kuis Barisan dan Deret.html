@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Kuis Barisan dan Deret</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+:root {
+  --bg: #eef2ff;
+  --ink: #1b1f3b;
+  --primary: #3b5bdb;
+  --primary-dark: #2b44a8;
+  --accent: #ffc933;
+  --accent-dark: #d9a400;
+  --benar: #2f9e44;
+  --salah: #e03131;
+  --putih: #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Fredoka", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.app { width: 100%; max-width: 480px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.hidden { display: none !important; }
+
+h1 { font-size: 2rem; line-height: 1.15; margin: 24px 0 8px; }
+h2 { font-size: 1.3rem; line-height: 1.4; font-weight: 500; margin-bottom: 14px; }
+.sub { margin-bottom: 20px; opacity: .8; }
+
+/* Form */
+.label { display: block; font-weight: 500; margin-bottom: 6px; }
+.input {
+  width: 100%; font: inherit; font-size: 1.05rem;
+  padding: 11px 14px; margin-bottom: 20px;
+  border: 2px solid #c5cdf5; border-radius: 12px; background: var(--putih); color: var(--ink);
+}
+.input:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+/* Tombol bergaya game */
+.btn {
+  display: block; width: 100%;
+  font: inherit; font-size: 1.1rem; font-weight: 600;
+  padding: 14px 18px; margin-bottom: 14px;
+  border: none; border-radius: 14px; cursor: pointer;
+  transition: transform .08s, box-shadow .08s;
+}
+.btn-main { background: var(--primary); color: var(--putih); box-shadow: 0 5px 0 var(--primary-dark); }
+.btn-alt  { background: var(--accent);  color: var(--ink);    box-shadow: 0 5px 0 var(--accent-dark); }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+.btn:focus-visible, .btn-teks:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.baris-kecil { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.btn-teks {
+  font: inherit; font-size: .95rem; background: none; border: none;
+  color: var(--primary-dark); text-decoration: underline; cursor: pointer; padding: 6px 2px;
+}
+
+/* Bar atas */
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.chip { background: var(--putih); padding: 4px 12px; border-radius: 999px; font-size: .9rem; font-weight: 500; }
+.chip-skor { background: var(--accent); font-weight: 600; }
+
+.nyawa { display: flex; gap: 4px; font-size: 1.4rem; line-height: 1; }
+.hati { color: var(--salah); display: inline-block; }
+.hati.mati { color: #b8bfe0; }
+.hati.pecah { animation: pecah .5s ease-out; }
+
+/* Timer & progres */
+.timer { height: 12px; background: #d0d8ff; border-radius: 99px; overflow: hidden; }
+#timer-bar { height: 100%; width: 100%; background: var(--benar); transition: width .25s linear, background .3s; }
+#timer-bar.sedikit { background: var(--accent-dark); }
+#timer-bar.habis   { background: var(--salah); }
+.timer-teks { font-size: .85rem; text-align: right; margin: 3px 0 8px; opacity: .75; }
+
+.progress { height: 6px; background: #d0d8ff; border-radius: 99px; overflow: hidden; margin-bottom: 10px; }
+#bar { height: 100%; width: 0; background: var(--primary); transition: width .3s; }
+.nomor { font-size: .9rem; opacity: .7; margin-bottom: 6px; }
+
+/* Gambar pola */
+.gambar { background: var(--putih); border-radius: 14px; padding: 10px; margin-bottom: 14px; border: 2px solid #c5cdf5; }
+.gambar svg { display: block; width: 100%; height: auto; max-height: 260px; }
+
+/* Pilihan jawaban */
+.pilihan { display: grid; gap: 10px; }
+.opsi {
+  font: inherit; font-size: 1.05rem; text-align: left;
+  background: var(--putih); color: var(--ink);
+  border: 2px solid #c5cdf5; border-radius: 12px; padding: 12px 14px;
+  cursor: pointer; box-shadow: 0 4px 0 #c5cdf5;
+}
+.opsi:active { transform: translateY(3px); box-shadow: 0 1px 0 #c5cdf5; }
+.opsi:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.opsi.benar { background: #d3f9d8; border-color: var(--benar); box-shadow: 0 4px 0 var(--benar); animation: pop .35s ease-out; }
+.opsi.salah { background: #ffe3e3; border-color: var(--salah); box-shadow: 0 4px 0 var(--salah); animation: getar .4s; }
+.opsi:disabled { cursor: default; }
+
+/* Umpan balik */
+.umpan { margin-top: 18px; padding: 14px; background: var(--putih); border-radius: 14px; border-left: 6px solid var(--primary); }
+.umpan.ok { border-left-color: var(--benar); }
+.umpan.no { border-left-color: var(--salah); }
+.umpan-judul { font-weight: 600; margin-bottom: 4px; }
+#umpan-isi { margin-bottom: 14px; line-height: 1.5; white-space: pre-line; }
+.umpan .btn { margin-bottom: 0; }
+
+/* Hasil */
+.bintang { font-size: 3rem; text-align: center; margin: 12px 0; letter-spacing: 6px; }
+.bintang span { display: inline-block; animation: bintang .5s ease-out backwards; }
+.bintang .kosong { color: #b8bfe0; }
+.bintang .isi { color: var(--accent-dark); }
+.hasil-teks { text-align: center; margin-bottom: 8px; font-size: 1.1rem; }
+.hasil-ulang { text-align: center; margin-bottom: 8px; opacity: .85; }
+.status-kirim { text-align: center; font-size: .9rem; margin-bottom: 20px; opacity: .7; }
+
+/* Rekap */
+.rekap-judul { font-weight: 600; margin: 14px 0 6px; }
+.rekap-baris { background: var(--putih); border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; font-size: .95rem; }
+.rekap-baris .rekap-pct { font-weight: 600; }
+.rekap-baris.sulit { border-left: 5px solid var(--salah); }
+.rekap-kosong { margin-bottom: 20px; opacity: .8; }
+
+/* Animasi */
+@keyframes pop     { 0% { transform: scale(1); } 50% { transform: scale(1.04); } 100% { transform: scale(1); } }
+@keyframes getar   { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes pecah   { 0% { transform: scale(1); } 40% { transform: scale(1.6) rotate(-12deg); } 100% { transform: scale(1); } }
+@keyframes bintang { 0% { transform: scale(0) rotate(-90deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Halaman terbit: aman untuk layar HP */
+:root { color-scheme: light; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+
+.mode { display: block; width: 100%; text-align: left; font: inherit; color: var(--ink); background: var(--putih); border: 2px solid #c5cdf5; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 4px 0 #c5cdf5; cursor: pointer; }
+.mode b { display: block; font-size: 1.1rem; font-weight: 600; }
+.mode span { font-size: .9rem; opacity: .75; }
+.mode:active { transform: translateY(3px); box-shadow: 0 1px 0 #c5cdf5; }
+.mode:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.arahan { margin-bottom: 8px; font-weight: 500; }
+.seq { font-size: 1.35rem; font-weight: 600; text-align: center; background: var(--putih); border: 2px solid #c5cdf5; border-radius: 14px; padding: 16px 10px; margin-bottom: 14px; overflow-wrap: anywhere; }
+.seq.kecil { font-size: 1.05rem; font-weight: 500; text-align: left; }
+.kartu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.kartu { min-height: 82px; font: inherit; font-size: .9rem; font-weight: 500; color: var(--putih); background: var(--primary); border: 2px solid var(--primary-dark); border-radius: 12px; padding: 4px; cursor: pointer; box-shadow: 0 4px 0 var(--primary-dark); }
+.kartu.buka { background: var(--putih); color: var(--ink); border-color: var(--accent-dark); box-shadow: 0 4px 0 var(--accent-dark); animation: pop .3s; }
+.kartu.cocok { background: #d3f9d8; color: var(--ink); border-color: var(--benar); box-shadow: 0 4px 0 var(--benar); }
+.kartu:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.umpan .isi { margin-bottom: 10px; line-height: 1.5; }
+#a-keluar { margin-top: 14px; }
+</style>
+</head>
+<body>
+  <main class="app">
+
+    <!-- Layar 1: Menu -->
+    <section id="menu" class="screen active">
+      <h1>Kuis Barisan dan Deret</h1>
+      <p class="sub">Pilih materi, lalu pilih permainan. Diskusikan dengan kelompokmu.</p>
+
+      <label for="kelompok" class="label">Nama kelompok</label>
+      <input id="kelompok" class="input" type="text" maxlength="30" placeholder="Contoh: Kelompok 1" autocomplete="off">
+
+      <button class="btn btn-main" data-materi="aritmatika">Aritmatika</button>
+      <button class="btn btn-alt" data-materi="geometri">Geometri</button>
+
+      <div class="baris-kecil">
+        <button id="btn-rekap" class="btn-teks">Rekap di perangkat ini</button>
+        <button id="btn-suara" class="btn-teks" aria-pressed="true">Suara: nyala</button>
+      </div>
+    </section>
+
+    <!-- Layar 2: Soal -->
+    <section id="game" class="screen">
+      <div class="topbar">
+        <span id="level" class="chip"></span>
+        <span id="nyawa" class="nyawa" aria-label="Nyawa"></span>
+        <span id="skor" class="chip chip-skor">Skor 0</span>
+      </div>
+
+      <div class="timer" aria-hidden="true"><div id="timer-bar"></div></div>
+      <p id="timer-teks" class="timer-teks"></p>
+
+      <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+      <p id="nomor" class="nomor"></p>
+
+      <div id="gambar" class="gambar hidden"></div>
+      <h2 id="pertanyaan"></h2>
+      <div id="pilihan" class="pilihan"></div>
+
+      <div id="umpan" class="umpan hidden" role="status">
+        <p id="umpan-judul" class="umpan-judul"></p>
+        <p id="umpan-isi"></p>
+        <button id="lanjut" class="btn btn-main">Lanjut</button>
+      </div>
+    </section>
+
+    <!-- Layar 3: Hasil -->
+    <section id="hasil" class="screen">
+      <h2 id="hasil-judul">Selesai!</h2>
+      <div id="bintang" class="bintang" aria-hidden="true"></div>
+      <p id="hasil-teks" class="hasil-teks"></p>
+      <p id="hasil-ulang" class="hasil-ulang"></p>
+      <p id="status-kirim" class="status-kirim"></p>
+      <button id="ulang" class="btn btn-main">Main lagi</button>
+      <button id="ke-menu" class="btn btn-alt">Pilih materi lain</button>
+    </section>
+
+    <!-- Layar 4: Rekap di perangkat ini -->
+    <section id="rekap" class="screen">
+      <h2>Rekap di perangkat ini</h2>
+      <p class="sub">Persentase jawaban benar per soal. Soal dengan angka paling rendah paling sulit bagi siswa.</p>
+      <div id="rekap-isi"></div>
+      <button id="rekap-kembali" class="btn btn-main">Kembali</button>
+      <button id="rekap-hapus" class="btn-teks">Hapus data rekap</button>
+    </section>
+
+  
+    <!-- Layar 5: Pilih permainan -->
+    <section id="mode" class="screen">
+      <h2 id="mode-judul"></h2>
+      <div id="mode-daftar"></div>
+      <button id="mode-kembali" class="btn-teks">Kembali ke menu</button>
+    </section>
+
+    <!-- Layar 6: Arena permainan -->
+    <section id="arena" class="screen">
+      <div class="topbar">
+        <span id="a-judul" class="chip"></span>
+        <span id="a-info" class="chip"></span>
+        <span id="a-skor" class="chip chip-skor"></span>
+      </div>
+      <div id="a-isi"></div>
+      <button id="a-keluar" class="btn-teks">Keluar ke pilihan permainan</button>
+    </section>
+
+  </main>
+  <script>
+/* ==========================================================
+   PENGATURAN (silakan ubah)
+   ========================================================== */
+const KONFIG = {
+  NYAWA: 3,          // jumlah nyawa di awal
+  WAKTU: 90,         // detik per soal (dibuat longgar karena siswa berdiskusi)
+  POIN: 10,          // poin tiap jawaban benar
+  SHEET_URL: ""      // tempel URL Apps Script di sini agar hasil masuk ke Google Sheets guru
+};
+
+/* ==========================================================
+   BANK SOAL
+   Tambah soal dengan menyalin satu blok { ... } lalu ubah isinya.
+   - level      : tahap soal (Level 1 = pola, 2 = rumus, 3 = hitung)
+   - tanya      : teks pertanyaan
+   - gambar     : (opsional) daftar jumlah titik tiap pola, mis. [3, 5, 7, 9]
+   - opsi       : daftar pilihan jawaban
+   - benar      : nomor jawaban benar di dalam opsi (mulai dari 0)
+   - penjelasan : muncul setelah siswa menjawab
+   ========================================================== */
+const BANK = {
+  aritmatika: [
+    {
+      level: "Level 1",
+      tanya: "Perhatikan barisan 3, 7, 11, 15, ... Barisan ini termasuk jenis apa?",
+      opsi: ["Aritmatika dengan beda 4", "Geometri dengan rasio 4", "Aritmatika dengan beda 3", "Geometri dengan rasio 2"],
+      benar: 0,
+      penjelasan: "Selisih antarsuku selalu sama: 7 − 3 = 4, 11 − 7 = 4. Selisih tetap berarti barisan aritmatika dengan beda b = 4."
+    },
+    {
+      level: "Level 1 (gambar)",
+      tanya: "Gambar menunjukkan pola titik yang bertambah secara tetap. Berapa banyak titik pada pola ke-10?",
+      gambar: [3, 5, 7, 9],
+      opsi: ["23", "21", "19", "30"],
+      benar: 1,
+      penjelasan: "Dari gambar: 3, 5, 7, 9, jadi a = 3 dan b = 2.\nU₁₀ = 3 + (10 − 1)·2 = 3 + 18 = 21.\nAngka 23 muncul kalau lupa mengurangi n dengan 1."
+    },
+    {
+      level: "Level 1 (gambar)",
+      tanya: "Gambar menunjukkan pola titik yang berkurang secara tetap. Berapa beda (b) dari pola ini?",
+      gambar: [10, 8, 6, 4],
+      opsi: ["2", "−6", "−2", "4"],
+      benar: 2,
+      penjelasan: "Beda = suku berikutnya − suku sebelumnya = 8 − 10 = −2. Titik berkurang 2 tiap pola, jadi bedanya negatif."
+    },
+    {
+      level: "Level 2",
+      tanya: "Rumus suku ke-n barisan aritmatika adalah ...",
+      opsi: ["Uₙ = a + n·b", "Uₙ = a · rⁿ⁻¹", "Uₙ = a + (n − 1)·b", "Uₙ = ½ · n · (a + b)"],
+      benar: 2,
+      penjelasan: "Suku pertama adalah a, jadi untuk sampai ke suku ke-n kita menambah beda sebanyak (n − 1) kali. Rumusnya Uₙ = a + (n − 1)b."
+    },
+    {
+      level: "Level 3",
+      tanya: "Tentukan suku ke-10 dari barisan 5, 9, 13, ...",
+      opsi: ["45", "41", "49", "37"],
+      benar: 1,
+      penjelasan: "a = 5, b = 4, n = 10.\nU₁₀ = 5 + (10 − 1)·4 = 5 + 36 = 41."
+    },
+    {
+      level: "Level 3 (cerita)",
+      tanya: "Rina menabung Rp10.000 pada minggu pertama. Setiap minggu berikutnya tabungannya naik Rp2.000 dari minggu sebelumnya. Berapa tabungan Rina pada minggu ke-8?",
+      opsi: ["Rp26.000", "Rp22.000", "Rp24.000", "Rp18.000"],
+      benar: 2,
+      penjelasan: "a = 10.000, b = 2.000, n = 8.\nU₈ = 10.000 + (8 − 1)·2.000 = 10.000 + 14.000 = Rp24.000.\nRp26.000 muncul kalau lupa mengurangi n dengan 1."
+    },
+    {
+      level: "Level 3",
+      tanya: "Tentukan jumlah 10 suku pertama dari deret 2 + 5 + 8 + ...",
+      opsi: ["155", "310", "170", "145"],
+      benar: 0,
+      penjelasan: "a = 2, b = 3, n = 10.\nSₙ = n/2 · (2a + (n − 1)b)\nS₁₀ = 5 · (4 + 27) = 5 · 31 = 155."
+    },
+    {
+      level: "Level 3 (cerita)",
+      tanya: "Sebuah gedung pertunjukan punya 8 baris kursi. Baris pertama berisi 12 kursi, dan tiap baris berikutnya bertambah 3 kursi. Berapa jumlah seluruh kursi?",
+      opsi: ["33", "192", "90", "180"],
+      benar: 3,
+      penjelasan: "a = 12, b = 3, n = 8.\nS₈ = 8/2 · (2·12 + 7·3) = 4 · (24 + 21) = 4 · 45 = 180.\nAngka 33 hanya suku ke-8 (U₈), bukan jumlah semua kursi."
+    }
+  ],
+
+  geometri: [
+    {
+      level: "Level 1",
+      tanya: "Perhatikan barisan 2, 6, 18, 54, ... Barisan ini termasuk jenis apa?",
+      opsi: ["Aritmatika dengan beda 4", "Geometri dengan rasio 3", "Geometri dengan rasio 4", "Aritmatika dengan beda 3"],
+      benar: 1,
+      penjelasan: "Hasil bagi antarsuku selalu sama: 6 ÷ 2 = 3, 18 ÷ 6 = 3. Perbandingan tetap berarti barisan geometri dengan rasio r = 3."
+    },
+    {
+      level: "Level 1 (gambar)",
+      tanya: "Gambar menunjukkan pola titik yang selalu menjadi 2 kali lipat. Berapa banyak titik pada pola ke-7?",
+      gambar: [1, 2, 4, 8],
+      opsi: ["128", "64", "49", "32"],
+      benar: 1,
+      penjelasan: "Dari gambar: 1, 2, 4, 8, jadi a = 1 dan r = 2.\nU₇ = 1 · 2⁷⁻¹ = 2⁶ = 64.\nAngka 128 muncul kalau memakai pangkat 7, padahal pangkatnya n − 1."
+    },
+    {
+      level: "Level 1 (gambar)",
+      tanya: "Gambar menunjukkan pola titik yang terus mengecil. Berapa rasio (r) dari pola ini?",
+      gambar: [8, 4, 2, 1],
+      opsi: ["2", "−4", "½", "4"],
+      benar: 2,
+      penjelasan: "Rasio = suku berikutnya ÷ suku sebelumnya = 4 ÷ 8 = ½. Jumlah titik selalu menjadi setengahnya."
+    },
+    {
+      level: "Level 1",
+      tanya: "Rasio dari barisan 81, 27, 9, 3, ... adalah ...",
+      opsi: ["3", "−54", "⅓", "⅑"],
+      benar: 2,
+      penjelasan: "Rasio = suku berikutnya ÷ suku sebelumnya = 27 ÷ 81 = ⅓. Barisan mengecil, jadi rasionya pecahan antara 0 dan 1."
+    },
+    {
+      level: "Level 2",
+      tanya: "Rumus suku ke-n barisan geometri adalah ...",
+      opsi: ["Uₙ = a + (n − 1)·b", "Uₙ = a · rⁿ⁻¹", "Uₙ = a · rⁿ", "Uₙ = a · (n − 1)·r"],
+      benar: 1,
+      penjelasan: "Suku pertama adalah a, jadi untuk sampai ke suku ke-n kita mengalikan rasio sebanyak (n − 1) kali. Rumusnya Uₙ = a · rⁿ⁻¹."
+    },
+    {
+      level: "Level 3",
+      tanya: "Tentukan suku ke-7 dari barisan 3, 6, 12, ...",
+      opsi: ["96", "384", "192", "21"],
+      benar: 2,
+      penjelasan: "a = 3, r = 2, n = 7.\nU₇ = 3 · 2⁷⁻¹ = 3 · 2⁶ = 3 · 64 = 192.\nAngka 384 muncul kalau memakai 2⁷, padahal pangkatnya n − 1."
+    },
+    {
+      level: "Level 3 (cerita)",
+      tanya: "Ani menabung Rp5.000 pada minggu pertama. Setiap minggu berikutnya, jumlah tabungannya menjadi 2 kali lipat minggu sebelumnya. Berapa tabungan Ani pada minggu ke-6?",
+      opsi: ["Rp30.000", "Rp160.000", "Rp320.000", "Rp80.000"],
+      benar: 1,
+      penjelasan: "a = 5.000, r = 2, n = 6.\nU₆ = 5.000 · 2⁵ = 5.000 · 32 = Rp160.000."
+    },
+    {
+      level: "Level 3",
+      tanya: "Tentukan jumlah 8 suku pertama dari deret 1 + 2 + 4 + 8 + ...",
+      opsi: ["256", "127", "255", "128"],
+      benar: 2,
+      penjelasan: "a = 1, r = 2, n = 8.\nSₙ = a(rⁿ − 1)/(r − 1)\nS₈ = 1 · (2⁸ − 1)/(2 − 1) = 256 − 1 = 255."
+    }
+  ]
+};
+
+/* ==========================================================
+   PENYIMPANAN LOKAL
+   ========================================================== */
+const KUNCI = {
+  rekap: "kuis_rekap_v1",
+  antrean: "kuis_antrean_v1",
+  suara: "kuis_suara_v1",
+  kelompok: "kuis_kelompok_v1"
+};
+
+function baca(kunci, awal) {
+  try {
+    const v = localStorage.getItem(kunci);
+    return v === null ? awal : JSON.parse(v);
+  } catch (e) { return awal; }
+}
+function simpan(kunci, nilai) {
+  try { localStorage.setItem(kunci, JSON.stringify(nilai)); } catch (e) { /* abaikan */ }
+}
+
+/* ==========================================================
+   SUARA (dibuat dengan WebAudio, tanpa file suara)
+   ========================================================== */
+let suaraAktif = baca(KUNCI.suara, true);
+let audioCtx = null;
+
+function nada(frek, mulai, durasi, tipe, volume) {
+  if (!suaraAktif) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const t0 = audioCtx.currentTime + mulai;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = tipe || "sine";
+    osc.frequency.value = frek;
+    gain.gain.setValueAtTime(volume || 0.15, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durasi);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + durasi);
+  } catch (e) { /* perangkat tidak mendukung suara */ }
+}
+
+const bunyi = {
+  klik:   () => nada(520, 0, 0.06, "square", 0.05),
+  benar:  () => { nada(660, 0, 0.12); nada(880, 0.12, 0.2); },
+  salah:  () => { nada(200, 0, 0.25, "sawtooth", 0.1); nada(150, 0.12, 0.3, "sawtooth", 0.1); },
+  menang: () => [523, 659, 784, 1047].forEach((f, i) => nada(f, i * 0.12, 0.25)),
+  kalah:  () => [400, 330, 262, 196].forEach((f, i) => nada(f, i * 0.15, 0.3, "triangle", 0.12))
+};
+
+/* ==========================================================
+   GAMBAR POLA TITIK (SVG)
+   Tiap pola digambar sebagai tumpukan titik dari bawah ke atas.
+   ========================================================== */
+function gambarPola(jumlah) {
+  const r = 8, jarak = 5, lebarKolom = 2 * r + 24, tepi = 14, tinggiLabel = 22;
+  const tertinggi = Math.max(...jumlah);
+  const tinggiIsi = tertinggi * (2 * r + jarak) - jarak;
+  const lebar = tepi * 2 + jumlah.length * lebarKolom + lebarKolom * 0.6;
+  const tinggi = tepi + tinggiIsi + tinggiLabel + tepi;
+  const dasar = tepi + tinggiIsi;
+  let isi = "";
+
+  jumlah.forEach((n, i) => {
+    const x = tepi + i * lebarKolom + lebarKolom / 2;
+    for (let k = 0; k < n; k++) {
+      const y = dasar - r - k * (2 * r + jarak);
+      isi += `<circle cx="${x}" cy="${y}" r="${r}" fill="#3b5bdb"/>`;
+    }
+    isi += `<text x="${x}" y="${dasar + 18}" text-anchor="middle" font-size="13" fill="#1b1f3b" font-family="Fredoka, system-ui, sans-serif">Pola ${i + 1}</text>`;
+  });
+
+  // Tanda "?" untuk pola berikutnya
+  const xTanya = tepi + jumlah.length * lebarKolom + lebarKolom / 2;
+  isi += `<text x="${xTanya}" y="${dasar - tinggiIsi / 2 + 10}" text-anchor="middle" font-size="30" fill="#d9a400" font-weight="600" font-family="Fredoka, system-ui, sans-serif">...</text>`;
+
+  const alt = "Pola titik: " + jumlah.map((n, i) => `pola ${i + 1} ada ${n} titik`).join(", ");
+  return `<svg viewBox="0 0 ${lebar} ${tinggi}" role="img" aria-label="${alt}" xmlns="http://www.w3.org/2000/svg">${isi}</svg>`;
+}
+
+/* ==========================================================
+   LOGIKA PERMAINAN
+   ========================================================== */
+const el = (id) => document.getElementById(id);
+const layar = { menu: el("menu"), game: el("game"), hasil: el("hasil"), rekap: el("rekap") };
+
+let materi = null;      // "aritmatika" atau "geometri"
+let soal = [];
+let indeks = 0;
+let skor = 0;
+let nyawa = KONFIG.NYAWA;
+let sudahJawab = false;
+let catatan = [];       // jawaban sesi ini: { no, tanya, benar }
+let batasWaktu = 0;
+let idTimer = null;
+
+function tampilkan(nama) {
+  Object.values(layar).forEach((s) => s.classList.remove("active"));
+  layar[nama].classList.add("active");
+  window.scrollTo(0, 0);
+}
+
+function acak(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function mulai(namaMateri) {
+  materi = namaMateri;
+  soal = BANK[materi];
+  indeks = 0;
+  skor = 0;
+  nyawa = KONFIG.NYAWA;
+  catatan = [];
+  simpan(KUNCI.kelompok, el("kelompok").value.trim());
+  tampilkan("game");
+  gambarNyawa(false);
+  tampilSoal();
+}
+
+function gambarNyawa(pecahTerakhir) {
+  const wadah = el("nyawa");
+  wadah.innerHTML = "";
+  for (let i = 0; i < KONFIG.NYAWA; i++) {
+    const h = document.createElement("span");
+    const hidup = i < nyawa;
+    h.className = "hati" + (hidup ? "" : " mati") + (pecahTerakhir && i === nyawa ? " pecah" : "");
+    h.textContent = hidup ? "♥" : "♡";
+    wadah.appendChild(h);
+  }
+  wadah.setAttribute("aria-label", `Nyawa ${nyawa} dari ${KONFIG.NYAWA}`);
+}
+
+function tampilSoal() {
+  sudahJawab = false;
+  const s = soal[indeks];
+
+  el("level").textContent = s.level;
+  el("skor").textContent = "Skor " + skor;
+  el("nomor").textContent = `Soal ${indeks + 1} dari ${soal.length}`;
+  el("bar").style.width = (indeks / soal.length) * 100 + "%";
+  el("pertanyaan").textContent = s.tanya;
+  el("umpan").classList.add("hidden");
+
+  const kotakGambar = el("gambar");
+  if (s.gambar) {
+    kotakGambar.innerHTML = gambarPola(s.gambar);
+    kotakGambar.classList.remove("hidden");
+  } else {
+    kotakGambar.innerHTML = "";
+    kotakGambar.classList.add("hidden");
+  }
+
+  const daftar = s.opsi.map((teks, i) => ({ teks, benar: i === s.benar }));
+  const wadah = el("pilihan");
+  wadah.innerHTML = "";
+  acak(daftar).forEach((o) => {
+    const b = document.createElement("button");
+    b.className = "opsi";
+    b.textContent = o.teks;
+    b.dataset.benar = o.benar;
+    b.addEventListener("click", () => jawab(b));
+    wadah.appendChild(b);
+  });
+
+  mulaiTimer();
+}
+
+/* Timer */
+function mulaiTimer() {
+  hentikanTimer();
+  batasWaktu = Date.now() + KONFIG.WAKTU * 1000;
+  perbaruiTimer();
+  idTimer = setInterval(perbaruiTimer, 250);
+}
+function hentikanTimer() {
+  if (idTimer) clearInterval(idTimer);
+  idTimer = null;
+}
+function perbaruiTimer() {
+  const sisa = Math.max(0, batasWaktu - Date.now());
+  const persen = (sisa / (KONFIG.WAKTU * 1000)) * 100;
+  const bar = el("timer-bar");
+  bar.style.width = persen + "%";
+  bar.className = persen < 15 ? "habis" : persen < 40 ? "sedikit" : "";
+  el("timer-teks").textContent = Math.ceil(sisa / 1000) + " detik";
+  if (sisa <= 0 && !sudahJawab) jawab(null);   // waktu habis
+}
+
+/* Menjawab. tombol = null berarti waktu habis. */
+function jawab(tombol) {
+  if (sudahJawab) return;
+  sudahJawab = true;
+  hentikanTimer();
+
+  const s = soal[indeks];
+  const benar = tombol !== null && tombol.dataset.benar === "true";
+
+  document.querySelectorAll(".opsi").forEach((b) => {
+    b.disabled = true;
+    if (b.dataset.benar === "true") b.classList.add("benar");
+  });
+
+  catatan.push({ no: indeks + 1, tanya: s.tanya, benar });
+  catatLokal(materi, indeks, benar);
+
+  const umpan = el("umpan");
+  umpan.classList.remove("ok", "no", "hidden");
+
+  if (benar) {
+    skor += KONFIG.POIN;
+    el("skor").textContent = "Skor " + skor;
+    umpan.classList.add("ok");
+    el("umpan-judul").textContent = "Benar! +" + KONFIG.POIN;
+    bunyi.benar();
+  } else {
+    if (tombol) tombol.classList.add("salah");
+    nyawa = Math.max(0, nyawa - 1);
+    gambarNyawa(true);
+    umpan.classList.add("no");
+    el("umpan-judul").textContent = tombol === null ? "Waktu habis. Lihat langkahnya:" : "Belum tepat. Lihat langkahnya:";
+    bunyi.salah();
+  }
+  el("umpan-isi").textContent = s.penjelasan;
+
+  const akhir = indeks === soal.length - 1 || nyawa === 0;
+  el("lanjut").textContent = akhir ? "Lihat hasil" : "Lanjut";
+  el("lanjut").focus();
+}
+
+function lanjut() {
+  bunyi.klik();
+  indeks++;
+  if (nyawa === 0 || indeks >= soal.length) tampilHasil();
+  else tampilSoal();
+}
+
+/* ==========================================================
+   HASIL
+   ========================================================== */
+function tampilHasil() {
+  hentikanTimer();
+  const maks = soal.length * KONFIG.POIN;
+  const persen = skor / maks;
+  const kalah = nyawa === 0 && catatan.length < soal.length;
+  const bintang = kalah ? 0 : persen >= 0.8 ? 3 : persen >= 0.5 ? 2 : 1;
+
+  el("hasil-judul").textContent = kalah ? "Nyawa habis" : "Selesai!";
+
+  const wadahBintang = el("bintang");
+  wadahBintang.innerHTML = "";
+  for (let i = 0; i < 3; i++) {
+    const b = document.createElement("span");
+    b.textContent = "★";
+    b.className = i < bintang ? "isi" : "kosong";
+    b.style.animationDelay = i * 0.25 + "s";
+    wadahBintang.appendChild(b);
+  }
+
+  let pesan;
+  if (kalah) pesan = "Jangan menyerah. Pelajari penjelasannya lalu coba lagi.";
+  else if (bintang === 3) pesan = "Hebat, pertahankan!";
+  else if (bintang === 2) pesan = "Bagus, coba lagi untuk bintang penuh.";
+  else pesan = "Ayo ulangi dan diskusikan lagi dengan kelompokmu.";
+  el("hasil-teks").textContent = `Skor kamu ${skor} dari ${maks}. ${pesan}`;
+
+  const salah = catatan.filter((c) => !c.benar).map((c) => c.no);
+  el("hasil-ulang").textContent = salah.length
+    ? "Soal yang perlu dipelajari lagi: nomor " + salah.join(", ") + "."
+    : "Semua soal dijawab benar.";
+
+  tampilkan("hasil");
+  if (bintang > 0) bunyi.menang(); else bunyi.kalah();
+
+  kirimHasil({
+    waktu: new Date().toISOString(),
+    kelompok: el("kelompok").value.trim() || "Tanpa nama",
+    materi,
+    skor,
+    maks,
+    sisaNyawa: nyawa,
+    selesai: !kalah,
+    jawaban: catatan
+  });
+}
+
+/* ==========================================================
+   REKAP UNTUK GURU
+   1) Rekap lokal  : disimpan di perangkat ini (localStorage).
+   2) Kirim ke Google Sheets : aktif jika KONFIG.SHEET_URL diisi.
+   ========================================================== */
+function catatLokal(namaMateri, no, benar) {
+  const data = baca(KUNCI.rekap, {});
+  const k = namaMateri + "|" + no;
+  if (!data[k]) data[k] = { d: 0, b: 0 };
+  data[k].d += 1;
+  if (benar) data[k].b += 1;
+  simpan(KUNCI.rekap, data);
+}
+
+function tampilRekap() {
+  const data = baca(KUNCI.rekap, {});
+  const wadah = el("rekap-isi");
+  wadah.innerHTML = "";
+
+  if (Object.keys(data).length === 0) {
+    wadah.innerHTML = '<p class="rekap-kosong">Belum ada data. Mainkan kuis dulu.</p>';
+  }
+
+  Object.keys(BANK).forEach((m) => {
+    const baris = BANK[m]
+      .map((s, i) => ({ s, i, r: data[m + "|" + i] }))
+      .filter((x) => x.r);
+    if (baris.length === 0) return;
+
+    const judul = document.createElement("p");
+    judul.className = "rekap-judul";
+    judul.textContent = m.charAt(0).toUpperCase() + m.slice(1);
+    wadah.appendChild(judul);
+
+    baris.forEach((x) => {
+      const pct = Math.round((x.r.b / x.r.d) * 100);
+      const d = document.createElement("div");
+      d.className = "rekap-baris" + (pct < 50 ? " sulit" : "");
+      const ringkas = x.s.tanya.length > 70 ? x.s.tanya.slice(0, 70) + "..." : x.s.tanya;
+      d.innerHTML = `<span class="rekap-pct">${pct}% benar</span> (${x.r.b} dari ${x.r.d} jawaban)<br>Soal ${x.i + 1}: `;
+      d.appendChild(document.createTextNode(ringkas));
+      wadah.appendChild(d);
+    });
+  });
+
+  tampilkan("rekap");
+}
+
+/* Pengiriman ke Google Sheets, dengan antrean jika sedang offline */
+function kirimHasil(data) {
+  const status = el("status-kirim");
+  if (!KONFIG.SHEET_URL) {
+    status.textContent = "Hasil tersimpan di perangkat ini.";
+    return;
+  }
+  const antrean = baca(KUNCI.antrean, []);
+  antrean.push(data);
+  simpan(KUNCI.antrean, antrean);
+  status.textContent = "Mengirim hasil ke guru...";
+  kirimAntrean().then((ok) => {
+    status.textContent = ok ? "Hasil sudah dikirim ke guru." : "Belum terkirim. Akan dicoba lagi saat ada sinyal.";
+  });
+}
+
+async function kirimAntrean() {
+  if (!KONFIG.SHEET_URL) return true;
+  let antrean = baca(KUNCI.antrean, []);
+  while (antrean.length > 0) {
+    try {
+      await fetch(KONFIG.SHEET_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(antrean[0])
+      });
+      antrean.shift();
+      simpan(KUNCI.antrean, antrean);
+    } catch (e) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* ==========================================================
+   PILIHAN PERMAINAN
+   ========================================================== */
+layar.mode = el("mode");
+layar.arena = el("arena");
+const A = { stop: null };
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const fmt = (n) => (Number.isInteger(n) ? n.toLocaleString("id-ID") : String(n)).replace("-", "−");
+const P = Math.pow;
+
+const MODE = [
+  ["kuis", "🧭 Kuis Petualangan", "8 soal bertahap, ada nyawa dan timer"],
+  ["pacu", "⚡ Pacu Rumus", "60 detik, soal acak tanpa habis, kejar combo"],
+  ["hilang", "🔍 Pola Hilang", "Temukan suku yang hilang, 8 ronde"],
+  ["kartu", "🃏 Kartu Pasangan", "Cocokkan barisan dengan beda atau rasionya"],
+  ["susun", "🧩 Susun Langkah", "Urutkan langkah penyelesaian yang benar"]
+];
+const JALAN = { kuis: () => mulai(materi), pacu: () => pacu(), hilang: () => hilang(), kartu: () => kartu(), susun: () => susun() };
+
+function pilihMode(m) {
+  materi = m;
+  el("mode-judul").textContent = "Materi " + (m === "aritmatika" ? "Aritmatika" : "Geometri") + ": pilih permainan";
+  const w = el("mode-daftar");
+  w.innerHTML = "";
+  MODE.forEach(([k, judul, ket]) => {
+    const b = document.createElement("button");
+    b.className = "mode";
+    b.innerHTML = "<b></b><span></span>";
+    b.firstChild.textContent = judul;
+    b.lastChild.textContent = ket;
+    b.onclick = () => { bunyi.klik(); simpan(KUNCI.kelompok, el("kelompok").value.trim()); JALAN[k](); };
+    w.appendChild(b);
+  });
+  tampilkan("mode");
+}
+el("mode-kembali").onclick = () => tampilkan("menu");
+el("a-keluar").onclick = () => { if (A.stop) A.stop(); pilihMode(materi); };
+
+/* Pembuat soal acak */
+const suku = (m, a, d, n) => Math.round(m === "aritmatika" ? a + (n - 1) * d : a * P(d, n - 1));
+const jml = (m, a, d, n) => Math.round(m === "aritmatika" ? n * (2 * a + (n - 1) * d) / 2 : a * (P(d, n) - 1) / (d - 1));
+const deret = (m, a, d, k) => Array.from({ length: k }, (_, i) => suku(m, a, d, i + 1));
+
+function pecoh(b, k) {
+  const s = [...new Set(k.map(Math.round))].filter((x) => x !== b && x > 0 && isFinite(x));
+  for (let t = 1; s.length < 3; t++) { const c = b + t * (Math.random() < 0.5 ? 1 : 2); if (c > 0 && c !== b && !s.includes(c)) s.push(c); }
+  return acak(s).slice(0, 3);
+}
+
+function bikinSoal(m, tipe) {
+  const ar = m === "aritmatika", a = ar ? ri(1, 12) : ri(1, 5), d = ar ? ri(2, 7) : ri(2, 3);
+  if (tipe === "hilang") {
+    const h = ri(2, 5), s = deret(m, a, d, 6), b = s[h - 1];
+    return { arah: "Berapa suku yang hilang (?)", seq: s.map((v, i) => (i === h - 1 ? "?" : fmt(v))).join(", ") + ", ...", benar: b,
+      salah: pecoh(b, ar ? [b - d, b + d, b + 2 * d, b - 2 * d] : [b / d, b * d, b + a, b * d + a]),
+      info: (ar ? "Beda b = " : "Rasio r = ") + d + ". Suku yang hilang = " + fmt(b) + "." };
+  }
+  if (tipe === "u") {
+    const n = ar ? ri(6, 12) : ri(5, 7), b = suku(m, a, d, n);
+    return { arah: `Tentukan suku ke-${n} (U${n}) dari barisan:`, seq: deret(m, a, d, 4).map(fmt).join(", ") + ", ...", benar: b,
+      salah: pecoh(b, ar ? [a + n * d, b + d, b - d, a + (n - 2) * d] : [a * P(d, n), a * P(d, n - 2), b + a, a * d * (n - 1)]),
+      info: ar ? `U${n} = a + (n − 1)·b = ${a} + ${n - 1}·${d} = ${fmt(b)}` : `U${n} = a · r^(n − 1) = ${a} · ${d}^${n - 1} = ${fmt(b)}` };
+  }
+  const n = ar ? ri(4, 9) : ri(4, 6), b = jml(m, a, d, n);
+  return { arah: `Tentukan jumlah ${n} suku pertama (S${n}) dari deret:`, seq: deret(m, a, d, 3).map(fmt).join(" + ") + " + ...", benar: b,
+    salah: pecoh(b, ar ? [n * (2 * a + n * d) / 2, suku(m, a, d, n), n * (2 * a + (n - 1) * d), (n - 1) * (2 * a + (n - 2) * d) / 2]
+                       : [a * P(d, n) / (d - 1), suku(m, a, d, n), a * (P(d, n - 1) - 1) / (d - 1), a * (P(d, n) + 1) / (d - 1)]),
+    info: ar ? `S${n} = n/2 · (2a + (n − 1)b) = ${n}/2 · (${2 * a} + ${(n - 1) * d}) = ${fmt(b)}`
+             : `S${n} = a(rⁿ − 1)/(r − 1) = ${a}·(${d}^${n} − 1)/${d - 1} = ${fmt(b)}` };
+}
+
+/* Kerangka bersama */
+function arena(judul) {
+  if (A.stop) A.stop();
+  A.stop = null;
+  tampilkan("arena");
+  el("a-judul").textContent = judul;
+  el("a-info").textContent = "";
+  el("a-skor").textContent = "Skor 0";
+  el("a-isi").innerHTML = "";
+}
+
+function soalPilihan(q, onJawab) {
+  const w = el("a-isi");
+  w.innerHTML = '<p class="arahan"></p><div class="seq"></div><div class="pilihan"></div>';
+  w.querySelector(".arahan").textContent = q.arah;
+  w.querySelector(".seq").textContent = q.seq;
+  const p = w.querySelector(".pilihan");
+  acak([q.benar, ...q.salah]).forEach((v) => {
+    const b = document.createElement("button");
+    b.className = "opsi";
+    b.textContent = fmt(v);
+    b.onclick = () => {
+      p.querySelectorAll("button").forEach((x) => { x.disabled = true; if (x.textContent === fmt(q.benar)) x.classList.add("benar"); });
+      const ok = v === q.benar;
+      if (!ok) b.classList.add("salah");
+      onJawab(ok);
+    };
+    p.appendChild(b);
+  });
+  return w;
+}
+
+function umpanA(w, ok, info, fn) {
+  const u = document.createElement("div");
+  u.className = "umpan " + (ok ? "ok" : "no");
+  u.innerHTML = '<p class="umpan-judul"></p><p class="isi"></p>';
+  u.firstChild.textContent = ok ? "Benar!" : "Belum tepat.";
+  u.lastChild.textContent = info;
+  if (fn) {
+    const b = document.createElement("button");
+    b.className = "btn btn-main";
+    b.textContent = "Lanjut";
+    b.onclick = () => { bunyi.klik(); fn(); };
+    u.appendChild(b);
+    setTimeout(() => b.focus(), 0);
+  }
+  w.appendChild(u);
+}
+
+function selesaiArena(jd, teks, bn, ulang, nilai) {
+  if (bn > 0) bunyi.menang(); else bunyi.kalah();
+  let rk = "";
+  if (nilai != null) {
+    const k = "kuis_rekor_" + materi + "_" + jd, l = baca(k, 0);
+    if (nilai > l) { simpan(k, nilai); if (l) rk = "Rekor baru!"; } else rk = "Rekor terbaik: " + l;
+  }
+  const w = el("a-isi");
+  w.innerHTML = '<h2>Selesai!</h2><div class="bintang"></div><p class="hasil-teks"></p><p class="hasil-ulang"></p>';
+  w.querySelector(".bintang").innerHTML = [1, 2, 3].map((i) => `<span class="${i <= bn ? "isi" : "kosong"}" style="animation-delay:${i * 0.25}s">★</span>`).join("");
+  w.querySelector(".hasil-teks").textContent = teks;
+  w.querySelector(".hasil-ulang").textContent = rk;
+  [["Main lagi", "btn btn-main", ulang], ["Pilih permainan lain", "btn btn-alt", () => pilihMode(materi)]].forEach(([t, c, f]) => {
+    const b = document.createElement("button");
+    b.className = c; b.textContent = t; b.onclick = () => { bunyi.klik(); f(); };
+    w.appendChild(b);
+  });
+}
+
+/* 1) Pacu Rumus */
+function pacu() {
+  arena("⚡ Pacu Rumus");
+  let skor = 0, combo = 0, sisa = 60, benarN = 0, usai = false;
+  const tampil = () => { el("a-info").textContent = sisa + " dtk"; el("a-skor").textContent = "Skor " + skor + (combo >= 3 ? " x2" : ""); };
+  const tick = setInterval(() => { sisa--; tampil(); if (sisa <= 0) akhir(); }, 1000);
+  A.stop = () => { usai = true; clearInterval(tick); };
+  function akhir() {
+    if (usai) return;
+    A.stop();
+    selesaiArena("pacu", `Skor ${skor}. ${benarN} jawaban benar dalam 60 detik.`, skor >= 150 ? 3 : skor >= 80 ? 2 : 1, pacu, skor);
+  }
+  function berikut() {
+    if (usai) return;
+    const q = bikinSoal(materi, Math.random() < 0.6 ? "u" : "s");
+    const w = soalPilihan(q, (ok) => {
+      if (usai) return;
+      if (ok) { combo++; skor += KONFIG.POIN * (combo >= 3 ? 2 : 1); benarN++; bunyi.benar(); }
+      else { combo = 0; sisa = Math.max(0, sisa - 5); bunyi.salah(); umpanA(w, false, q.info + " (waktu −5 detik)"); }
+      tampil();
+      if (sisa <= 0) return akhir();
+      setTimeout(berikut, ok ? 450 : 1800);
+    });
+  }
+  tampil(); berikut();
+}
+
+/* 2) Pola Hilang */
+function hilang() {
+  arena("🔍 Pola Hilang");
+  const N = 8; let r = 0, skor = 0;
+  function babak() {
+    if (r >= N) return selesaiArena("hilang", `Skor ${skor} dari ${N * KONFIG.POIN}.`, skor >= 70 ? 3 : skor >= 40 ? 2 : 1, hilang, skor);
+    r++;
+    el("a-info").textContent = `Ronde ${r}/${N}`;
+    const q = bikinSoal(materi, "hilang");
+    const w = soalPilihan(q, (ok) => {
+      if (ok) { skor += KONFIG.POIN; bunyi.benar(); } else bunyi.salah();
+      el("a-skor").textContent = "Skor " + skor;
+      umpanA(w, ok, q.info, babak);
+    });
+  }
+  babak();
+}
+
+/* 3) Kartu Pasangan */
+function kartu() {
+  arena("🃏 Kartu Pasangan");
+  const ar = materi === "aritmatika";
+  const D = ar ? [[2, 3], [3, 5], [4, 1], [5, 2], [-2, 20], [-3, 25]] : [[2, 3], [3, 2], [4, 1], [5, 1], [0.5, 32], [1 / 3, 81]];
+  const nama = { 0.5: "½", [1 / 3]: "⅓" };
+  const semua = [];
+  D.forEach(([d, a], i) => {
+    semua.push({ i, t: deret(materi, a, d, 3).map(fmt).join(", ") + ", ..." });
+    semua.push({ i, t: (ar ? "beda " : "rasio ") + (nama[d] || fmt(d)) });
+  });
+  const w = el("a-isi");
+  w.innerHTML = '<p class="arahan">Buka dua kartu. Cocokkan barisan dengan ' + (ar ? "bedanya" : "rasionya") + ".</p>";
+  const grid = document.createElement("div");
+  grid.className = "kartu-grid";
+  w.appendChild(grid);
+  let terbuka = null, kunci = false, langkah = 0, cocok = 0;
+  acak(semua).forEach((k) => {
+    const b = document.createElement("button");
+    b.className = "kartu"; b.textContent = "?";
+    b.onclick = () => {
+      if (kunci || b.classList.contains("buka") || b.classList.contains("cocok")) return;
+      b.classList.add("buka"); b.textContent = k.t; bunyi.klik();
+      if (!terbuka) { terbuka = { b, k }; return; }
+      langkah++; el("a-info").textContent = "Langkah " + langkah;
+      const x = terbuka; terbuka = null;
+      if (x.k.i === k.i) {
+        [x.b, b].forEach((e) => { e.classList.remove("buka"); e.classList.add("cocok"); });
+        bunyi.benar(); cocok++;
+        el("a-skor").textContent = `Pasang ${cocok}/${D.length}`;
+        if (cocok === D.length) setTimeout(() => selesaiArena("kartu", `Selesai dalam ${langkah} langkah.`, langkah <= 9 ? 3 : langkah <= 13 ? 2 : 1, kartu), 700);
+      } else {
+        kunci = true; bunyi.salah();
+        setTimeout(() => { [x.b, b].forEach((e) => { e.classList.remove("buka"); e.textContent = "?"; }); kunci = false; }, 900);
+      }
+    };
+    grid.appendChild(b);
+  });
+  el("a-skor").textContent = "Pasang 0/" + D.length;
+}
+
+/* 4) Susun Langkah */
+const LANGKAH = {
+  aritmatika: [
+    { t: "Tentukan U10 dari barisan 5, 9, 13, ...", s: ["Tentukan a = 5 dan beda b = 9 − 5 = 4", "Tulis rumus Uₙ = a + (n − 1)b", "Substitusi: U10 = 5 + (10 − 1)·4", "Hitung: U10 = 5 + 36 = 41"] },
+    { t: "Tentukan jumlah 10 suku pertama dari 2 + 5 + 8 + ...", s: ["Tentukan a = 2 dan beda b = 5 − 2 = 3", "Tulis rumus Sₙ = n/2 · (2a + (n − 1)b)", "Substitusi: S10 = 10/2 · (2·2 + 9·3)", "Hitung: S10 = 5 · 31 = 155"] },
+    { t: "Tabungan Rina minggu pertama Rp10.000 dan naik Rp2.000 tiap minggu. Berapa tabungannya minggu ke-8?", s: ["Kenali pola: naik tetap, jadi aritmatika dengan a = 10.000 dan b = 2.000", "Tulis rumus Uₙ = a + (n − 1)b", "Substitusi: U8 = 10.000 + 7 · 2.000", "Hitung: U8 = Rp24.000"] }
+  ],
+  geometri: [
+    { t: "Tentukan U7 dari barisan 3, 6, 12, ...", s: ["Tentukan a = 3 dan rasio r = 6 ÷ 3 = 2", "Tulis rumus Uₙ = a · rⁿ⁻¹", "Substitusi: U7 = 3 · 2⁷⁻¹ = 3 · 2⁶", "Hitung: U7 = 3 · 64 = 192"] },
+    { t: "Tentukan jumlah 8 suku pertama dari 1 + 2 + 4 + ...", s: ["Tentukan a = 1 dan rasio r = 2", "Tulis rumus Sₙ = a(rⁿ − 1)/(r − 1)", "Substitusi: S8 = 1 · (2⁸ − 1)/(2 − 1)", "Hitung: S8 = 255"] },
+    { t: "Tabungan Ani minggu pertama Rp5.000 dan menjadi 2 kali lipat tiap minggu. Berapa tabungannya minggu ke-6?", s: ["Kenali pola: 2 kali lipat, jadi geometri dengan a = 5.000 dan r = 2", "Tulis rumus Uₙ = a · rⁿ⁻¹", "Substitusi: U6 = 5.000 · 2⁶⁻¹", "Hitung: U6 = 5.000 · 32 = Rp160.000"] }
+  ]
+};
+
+function susun() {
+  arena("🧩 Susun Langkah");
+  const daftar = acak(LANGKAH[materi]); let i = 0, skor = 0;
+  function babak() {
+    if (i >= daftar.length) return selesaiArena("susun", `Skor ${skor}.`, skor >= 50 ? 3 : skor >= 35 ? 2 : 1, susun, skor);
+    const p = daftar[i++]; let urut = 0, salah = 0;
+    el("a-info").textContent = `Soal ${i}/${daftar.length}`;
+    const w = el("a-isi");
+    w.innerHTML = '<p class="arahan">Ketuk langkah sesuai urutan yang benar.</p><div class="seq kecil"></div><div class="pilihan"></div>';
+    w.querySelector(".seq").textContent = p.t;
+    const wadah = w.querySelector(".pilihan");
+    acak(p.s.map((teks, k) => ({ teks, k }))).forEach((o) => {
+      const b = document.createElement("button");
+      b.className = "opsi"; b.textContent = o.teks;
+      b.onclick = () => {
+        if (o.k === urut) {
+          b.classList.add("benar"); b.disabled = true; b.textContent = (++urut) + ". " + o.teks; bunyi.benar();
+          if (urut === p.s.length) {
+            skor += Math.max(5, 20 - salah * 5);
+            el("a-skor").textContent = "Skor " + skor;
+            umpanA(w, true, salah ? `Selesai dengan ${salah} kesalahan urutan.` : "Urutan sempurna!", babak);
+          }
+        } else {
+          salah++; bunyi.salah();
+          b.classList.add("salah"); setTimeout(() => b.classList.remove("salah"), 450);
+        }
+      };
+      wadah.appendChild(b);
+    });
+  }
+  babak();
+}
+
+/* ==========================================================
+   TOMBOL
+   ========================================================== */
+function perbaruiTombolSuara() {
+  const b = el("btn-suara");
+  b.textContent = "Suara: " + (suaraAktif ? "nyala" : "mati");
+  b.setAttribute("aria-pressed", String(suaraAktif));
+}
+
+document.querySelectorAll("[data-materi]").forEach((b) =>
+  b.addEventListener("click", () => { bunyi.klik(); pilihMode(b.dataset.materi); })
+);
+el("lanjut").addEventListener("click", lanjut);
+el("ulang").addEventListener("click", () => { bunyi.klik(); mulai(materi); });
+el("ke-menu").addEventListener("click", () => { bunyi.klik(); tampilkan("menu"); });
+el("btn-rekap").addEventListener("click", tampilRekap);
+el("rekap-kembali").addEventListener("click", () => tampilkan("menu"));
+el("rekap-hapus").addEventListener("click", () => {
+  if (confirm("Hapus semua data rekap di perangkat ini?")) {
+    simpan(KUNCI.rekap, {});
+    tampilRekap();
+  }
+});
+el("btn-suara").addEventListener("click", () => {
+  suaraAktif = !suaraAktif;
+  simpan(KUNCI.suara, suaraAktif);
+  perbaruiTombolSuara();
+  bunyi.klik();
+});
+
+/* Awal */
+el("kelompok").value = baca(KUNCI.kelompok, "");
+perbaruiTombolSuara();
+kirimAntrean();   // kirim hasil yang tertunda dari sesi sebelumnya
+
+</script>
+</body>
+</html>
